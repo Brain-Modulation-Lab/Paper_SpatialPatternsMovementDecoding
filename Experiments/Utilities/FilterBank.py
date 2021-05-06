@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Jul 2020
+The original function is part of the MOABB library
+http://moabb.neurotechx.com/docs/_modules/moabb/pipelines/utils.html#FilterBank
 
+I have slighly modified the source code so as model parameters are also saved
+during learning.
+
+Created on Jun 2020
 @author: Victoria Peterson
 """
 from sklearn.pipeline import make_pipeline

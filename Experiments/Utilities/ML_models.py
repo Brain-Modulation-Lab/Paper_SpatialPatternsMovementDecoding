@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Dec 2020
+For a given regression model, search the optimal hyperameters and return the 
+model
 
+Created on Dec 2020
 @author: Victoria Peterson
 """
 #%%
-from sklearn.linear_model import TweedieRegressor
 from pyglmnet import GLM
+from sklearn.linear_model import TweedieRegressor
 from bayes_opt import BayesianOptimization
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import ElasticNet
@@ -34,12 +36,11 @@ def optimize_enet(x,y):
         f=function,
         pbounds={"alpha": (1e-6, 0.99), "l1_ratio": (1e-6,0.99)},
         random_state=0,
-        verbose=1,
+        verbose=0,
     )
     optimizer.probe(params=[1e-3, 1e-3], lazy=True)
     optimizer.maximize(n_iter=25, init_points=20, acq="ei", xi=1e-1)    
     return optimizer.max
-
 
 def tweedie_train(alpha, power, x, y):
     reg = TweedieRegressor(alpha=alpha, power=power, max_iter=10000)
@@ -62,8 +63,6 @@ def optimize_tweedie(x, y):
     # optimizer.probe(params=[0.01, 1], lazy=True)
     optimizer.maximize(n_iter=25, init_points=20, acq="ei", xi=1e-1)
     return optimizer.max
-
-
 def glm_train(alpha, reg_lambda, x, y):
     reg = GLM(distr="poisson", alpha=alpha, reg_lambda=reg_lambda,
               max_iter=10000, score_metric="pseudo_R2", tol=1e-4)
@@ -82,13 +81,13 @@ def optimize_glm(x, y):
         f=function,
         pbounds={"alpha": (1e-6, 1), "reg_lambda": (1e-6, 1)},
         random_state=0,
-        verbose=1,
+        verbose=0,
     )
     optimizer.maximize(n_iter=25, init_points=20, alpha=1e-3)
     return optimizer.max
 
-def glmlasso_train(reg_lambda, x, y, distri):
-    reg = GLM(distr=distri, alpha=0.5, reg_lambda=reg_lambda,
+def glm05_train(reg_lambda, x, y):
+    reg = GLM(distr="poisson", alpha=0.5, reg_lambda=reg_lambda,
               max_iter=10000, score_metric="pseudo_R2", tol=1e-4)
     scaler = StandardScaler()
     clf = make_pipeline(scaler, reg)
@@ -96,27 +95,29 @@ def glmlasso_train(reg_lambda, x, y, distri):
     return cval.mean()
 
 
-def optimize_glmlasso(x, y, distri):
+def optimize_glm05(x, y):
     """Apply Bayesian Optimization to select enet parameters."""
     def function(reg_lambda):
-        return glmlasso_train(reg_lambda=reg_lambda, x=x, y=y, distri=distri)
+        return glm05_train(reg_lambda=reg_lambda, x=x, y=y)
 
     optimizer = BayesianOptimization(
         f=function,
         pbounds={"reg_lambda": (1e-6,1)},
         random_state=0,
-        verbose=1,
+        verbose=0,
     )
     optimizer.maximize(n_iter=25, init_points=20, alpha=1e-3)
     return optimizer.max
 
 
-def get_model(used_model, x, y, distri='poisson'):
+def get_model(used_model, x, y):
     """get model.
     If used_model == 0: Enet
     If used_mode  == 1: Tweedie Regressor
     If used_model == 2: GLM with poisson
-    if used_model == 3: GMLLASSO with poisson
+    if used_model == 3: GML with poisson, alpha 0.5
+    
+
     """
     if used_model == 0:
         optimizer = optimize_enet(x, y)
@@ -130,12 +131,12 @@ def get_model(used_model, x, y, distri='poisson'):
                              power=optimizer['params']['power'], max_iter=1000)
         return clf, optimizer
     elif used_model == 2 or used_model == 'GLM':
-        optimizer = optimize_glm(x, y, dsitri)
-        clf = GLM(distr=dsitri, alpha=optimizer['params']['alpha'],
+        optimizer = optimize_glm(x, y)
+        clf = GLM(distr="poisson", alpha=optimizer['params']['alpha'],
                   reg_lambda=optimizer['params']['reg_lambda'], max_iter=10000)
         return clf, optimizer
-    elif used_model == 3 or used_model == 'GLMLASSO':
-        optimizer = optimize_glmlasso(x, y, distri)
-        clf = GLM(distr=distri, alpha=0.5,
+    elif used_model == 3 or used_model == 'GLML05':
+        optimizer = optimize_glm05(x, y)
+        clf = GLM(distr="poisson", alpha=0.5,
                   reg_lambda=optimizer['params']['reg_lambda'], max_iter=10000)
         return clf, optimizer

@@ -1,0 +1,20 @@
+name: bml_spoc
+channels:
+- defaults
+- conda-forge
+dependencies:
+- python==3.8
+- pip
+- numpy
+- scipy
+- matplotlib
+- pandas
+- scikit-learn
+- statsmodels
+- jupyter
+- spyder
+- mne
+- pip:
+  - sklearn
+  - pyglmnet
+  - bayesian-optimization

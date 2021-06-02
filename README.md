@@ -1,6 +1,8 @@
 # Paper_SpatialPatternsMovementDecoding
-
-You will find here all the codes and instructions needed to reproduce the experiments performed in "A SPATIO-SPECTRAL MULTIMODAL APPROACH FOR MOVEMENT DECODING IN PATIENTS WITH PARKINSON’S DISEASE", by Victoria Peterson, Timon Merk, Alan Bush, Vadim Nikulin, Andrea A. Kühn, Wolf-Julian Neumann and Mark Richardson.
+<p align="center">
+<img src="Images/OTDA_workflow.png" width="600">
+</p>
+You will find here all the codes and instructions needed to reproduce the experiments performed in "A spatio-spectral approach for movement decoding from cortical and subcortical recordings in patients with Parkinson’s disease", by Victoria Peterson, Timon Merk, Alan Bush, Vadim Nikulin, Andrea A. Kühn, Wolf-Julian Neumann and Mark Richardson.
 
 ### Installation guidelines
 If you want to reproduce experiments and results made in this work, follow these steps:

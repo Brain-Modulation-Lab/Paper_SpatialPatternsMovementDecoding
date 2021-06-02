@@ -128,7 +128,7 @@ def get_model(used_model, x, y):
     elif used_model == 1 or used_model == 'TWEEDIE':
         optimizer = optimize_tweedie(x, y)
         clf=TweedieRegressor(alpha=optimizer['params']['alpha'],
-                             power=optimizer['params']['power'], max_iter=1000)
+                             power=optimizer['params']['power'], max_iter=10000)
         return clf, optimizer
     elif used_model == 2 or used_model == 'GLM':
         optimizer = optimize_glm(x, y)

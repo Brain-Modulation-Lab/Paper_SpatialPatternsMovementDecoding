@@ -16,6 +16,9 @@ from sklearn.linear_model import ElasticNet
 from sklearn.model_selection import cross_val_score
 import numpy as np
 from sklearn.pipeline import make_pipeline
+from sklearn.linear_model import LinearRegression
+from scipy.linalg import norm
+
 #%%
 def enet_train(alpha,l1_ratio,x,y):
     reg = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, max_iter=10000,normalize=False)
@@ -63,8 +66,8 @@ def optimize_tweedie(x, y):
     # optimizer.probe(params=[0.01, 1], lazy=True)
     optimizer.maximize(n_iter=25, init_points=20, acq="ei", xi=1e-1)
     return optimizer.max
-def glm_train(alpha, reg_lambda, x, y):
-    reg = GLM(distr="poisson", alpha=alpha, reg_lambda=reg_lambda,
+def glm_train(alpha, reg_lambda, x, y, distri):
+    reg = GLM(distr=distri, alpha=alpha, reg_lambda=reg_lambda,
               max_iter=10000, score_metric="pseudo_R2", tol=1e-4)
     scaler = StandardScaler()
     clf = make_pipeline(scaler, reg)
@@ -72,10 +75,10 @@ def glm_train(alpha, reg_lambda, x, y):
     return cval.mean()
 
 
-def optimize_glm(x, y):
+def optimize_glm(x, y, distri):
     """Apply Bayesian Optimization to select enet parameters."""
     def function(alpha, reg_lambda):
-        return glm_train(alpha=alpha, reg_lambda=reg_lambda, x=x, y=y)
+        return glm_train(alpha=alpha, reg_lambda=reg_lambda, x=x, y=y, distri=distri)
 
     optimizer = BayesianOptimization(
         f=function,
@@ -86,8 +89,40 @@ def optimize_glm(x, y):
     optimizer.maximize(n_iter=25, init_points=20, alpha=1e-3)
     return optimizer.max
 
-def glm05_train(reg_lambda, x, y):
-    reg = GLM(distr="poisson", alpha=0.5, reg_lambda=reg_lambda,
+def glm05gamma_train(reg_lambda, eta, x, y, dist):
+    reg = GLM(distr=dist, alpha=0.5, reg_lambda=reg_lambda,
+              max_iter=10000, score_metric="pseudo_R2", tol=1e-4, eta=eta)
+    scaler = StandardScaler()
+    clf = make_pipeline(scaler, reg)
+    cval = cross_val_score(clf, x, y, scoring='r2', cv=3)
+    return cval.mean()
+
+
+def optimize_glm05gamma(x, y, dist):
+    """Apply Bayesian Optimization to select enet parameters."""
+    # get lamba min
+    ols=LinearRegression()
+    ols.fit(x, y)
+    beta_ols=ols.coef_
+    lambda_min=norm((x*beta_ols).T*y)/len(y) #all values are non-zeros
+    lambda_max=norm((x.T*y), np.inf)/len(y) # all values are zero
+    # lambda_min = norm((x.T*y), np.inf)/len(y) # all values are zero
+    # lambda_min = lambda_min
+    def function(reg_lambda, eta):
+        return glm05gamma_train(reg_lambda=reg_lambda, x=x, y=y, dist=dist, eta=eta)
+
+    optimizer = BayesianOptimization(
+        f=function,
+        pbounds={"reg_lambda": (0.03,1), "eta": (0, 10)},
+        random_state=0,
+        verbose=0,
+    )
+    optimizer.maximize(n_iter=25, init_points=20, alpha=1e-3)
+    return optimizer.max
+
+
+def glm05_train(reg_lambda, x, y, dist):
+    reg = GLM(distr=dist, alpha=0.5, reg_lambda=reg_lambda,
               max_iter=10000, score_metric="pseudo_R2", tol=1e-4)
     scaler = StandardScaler()
     clf = make_pipeline(scaler, reg)
@@ -95,10 +130,10 @@ def glm05_train(reg_lambda, x, y):
     return cval.mean()
 
 
-def optimize_glm05(x, y):
+def optimize_glm05(x, y, dist):
     """Apply Bayesian Optimization to select enet parameters."""
     def function(reg_lambda):
-        return glm05_train(reg_lambda=reg_lambda, x=x, y=y)
+        return glm05_train(reg_lambda=reg_lambda, x=x, y=y, dist=dist)
 
     optimizer = BayesianOptimization(
         f=function,
@@ -110,12 +145,13 @@ def optimize_glm05(x, y):
     return optimizer.max
 
 
-def get_model(used_model, x, y):
+def get_model(used_model, x, y, distri):
     """get model.
     If used_model == 0: Enet
     If used_mode  == 1: Tweedie Regressor
     If used_model == 2: GLM with poisson
     if used_model == 3: GML with poisson, alpha 0.5
+    if used_model == 3: GML with gamma, alpha 0.5
     
 
     """
@@ -128,15 +164,16 @@ def get_model(used_model, x, y):
     elif used_model == 1 or used_model == 'TWEEDIE':
         optimizer = optimize_tweedie(x, y)
         clf=TweedieRegressor(alpha=optimizer['params']['alpha'],
-                             power=optimizer['params']['power'], max_iter=10000)
+                             power=optimizer['params']['power'], max_iter=1000)
         return clf, optimizer
     elif used_model == 2 or used_model == 'GLM':
-        optimizer = optimize_glm(x, y)
-        clf = GLM(distr="poisson", alpha=optimizer['params']['alpha'],
-                  reg_lambda=optimizer['params']['reg_lambda'], max_iter=10000)
+        optimizer = optimize_glm(x, y, distri)
+        clf = GLM(distr=distri, alpha=optimizer['params']['alpha'],
+                  reg_lambda=optimizer['params']['reg_lambda'], max_iter=10000,
+                  tol=1e-4)
         return clf, optimizer
     elif used_model == 3 or used_model == 'GLML05':
-        optimizer = optimize_glm05(x, y)
-        clf = GLM(distr="poisson", alpha=0.5,
-                  reg_lambda=optimizer['params']['reg_lambda'], max_iter=10000)
+        optimizer = optimize_glm05(x, y, distri)
+        clf = GLM(distr=distri, alpha=0.5,
+                  reg_lambda=optimizer['params']['reg_lambda'], max_iter=10000, tol=1e-4)
         return clf, optimizer

@@ -16,4 +16,4 @@ conda env create -f environment.yml
 ```
 conda activate bml_spoc
 ```
-5. Run the examples
+5. Run the provided example

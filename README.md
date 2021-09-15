@@ -1,6 +1,6 @@
 # Paper_SpatialPatternsMovementDecoding
 <p align="center">
-<img src="Images/Pipeline.jpg" width="600">
+<img src="Images/pipeline.jpg" width="600">
 </p>
 You will find here all the codes and instructions needed to reproduce the experiments performed in "A spatio-spectral approach for movement decoding from cortical and subcortical recordings in patients with Parkinson’s disease", by Victoria Peterson, Timon Merk, Alan Bush, Vadim Nikulin, Andrea A. Kühn, Wolf-Julian Neumann and Mark Richardson.
 

@@ -2,7 +2,7 @@
 <p align="center">
 <img src="Images/pipeline.jpg" width="600">
 </p>
-You will find here all the codes and instructions needed to reproduce the experiments performed in "A spatio-spectral approach for movement decoding from cortical and subcortical recordings in patients with Parkinson’s disease", by Victoria Peterson, Timon Merk, Alan Bush, Vadim Nikulin, Andrea A. Kühn, Wolf-Julian Neumann and Mark Richardson.
+You will find here all the codes and instructions needed to reproduce the experiments performed in [Movement decoding using spatio-spectral features of cortical and subcortical local field potentials](https://www.sciencedirect.com/science/article/abs/pii/S0014488622002862), by Victoria Peterson, Timon Merk, Alan Bush, Vadim Nikulin, Andrea A. Kühn, Wolf-Julian Neumann and Mark Richardson.
 
 ### Installation guidelines
 If you want to reproduce experiments and results made in this work, follow these steps:
